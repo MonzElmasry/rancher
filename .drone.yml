@@ -907,7 +907,7 @@ platform:
 
 steps:
   - name: dispatch
-    image: rancher/dapper:v0.5.0
+    image: rancher/dapper:v0.5.2
     commands:
       - dapper dispatch
     environment:
