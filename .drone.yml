@@ -231,6 +231,24 @@ steps:
     - drone-publish.rancher.io
     status:
     - failure
+- name: docker-publish-rancherd
+  image: plugins/docker
+  settings:
+    build_args:
+      - ARCH=amd64
+      - "VERSION=${DRONE_TAG}"
+    context: cmd/rancherd/package
+    custom_dns: 1.1.1.1
+    dockerfile: cmd/rancherd/package/Dockerfile
+    password:
+      from_secret: docker_password
+    repo: rancher/rancherd-upgrade
+    tag: "${DRONE_TAG}-linux-amd64"
+    username:
+      from_secret: docker_username
+  when:
+    event:
+    - tag
 
 volumes:
 - name: docker
@@ -896,43 +914,4 @@ volumes:
 trigger:
   event:
   - promote
----
-kind: pipeline
-type: docker
-name: dispatch
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-  - name: dispatch
-    image: rancher/dapper:v0.5.2
-    commands:
-      - dapper dispatch
-    environment:
-      PAT_TOKEN:
-        from_secret: github_token
-      PAT_USERNAME:
-        from_secret: pat_username
-    volumes:
-      - name: docker
-        path: /var/run/docker.sock
-    when:
-      event:
-        - tag
-      instance:
-        - drone-publish.rancher.io
-      ref:
-        - refs/head/master
-        - refs/tags/*
-
-volumes:
-  - name: docker
-    host:
-      path: /var/run/docker.sock
-
-depends_on:
-  - manifest
-
 ...
