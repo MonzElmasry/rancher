@@ -42,7 +42,7 @@ steps:
     tag: ${DRONE_BRANCH/release\//}-${DRONE_COMMIT}-linux-amd64
     password:
       from_secret: docker_password
-    repo: rancher/rancher
+    repo: mennaelmasry/rancher
     username:
       from_secret: docker_username
   when:
@@ -66,7 +66,7 @@ steps:
     tag: ${DRONE_BRANCH/release\//}-${DRONE_COMMIT}-linux-amd64
     password:
       from_secret: docker_password
-    repo: rancher/rancher-agent
+    repo: mennaelmasry/rancher-agent
     username:
       from_secret: docker_username
   when:
@@ -89,7 +89,7 @@ steps:
     tag: ${DRONE_BRANCH/release\//}-${DRONE_COMMIT}-linux-amd64
     password:
       from_secret: docker_password
-    repo: rancher/rancher-runtime
+    repo: mennaelmasry/rancher-runtime
     username:
       from_secret: docker_username
   when:
@@ -130,7 +130,7 @@ steps:
     dockerfile: package/Dockerfile
     password:
       from_secret: docker_password
-    repo: rancher/rancher
+    repo: mennaelmasry/rancher
     tag: "${DRONE_TAG}-linux-amd64"
     username:
       from_secret: docker_username
@@ -150,7 +150,7 @@ steps:
     dockerfile: package/Dockerfile.agent
     password:
       from_secret: docker_password
-    repo: rancher/rancher-agent
+    repo: mennaelmasry/rancher-agent
     tag: "${DRONE_TAG}-linux-amd64"
     username:
       from_secret: docker_username
@@ -169,7 +169,7 @@ steps:
     dockerfile: package/Dockerfile.runtime
     password:
       from_secret: docker_password
-    repo: rancher/rancher-runtime
+    repo: mennaelmasry/rancher-runtime
     tag: "${DRONE_TAG}-linux-amd64"
     username:
       from_secret: docker_username
@@ -231,18 +231,19 @@ steps:
     - drone-publish.rancher.io
     status:
     - failure
+
 - name: docker-publish-rancherd
   image: plugins/docker
   settings:
     build_args:
       - ARCH=amd64
-      - "VERSION=${DRONE_TAG}"
+      - "TAG=${DRONE_TAG}"
     context: cmd/rancherd/package
     custom_dns: 1.1.1.1
     dockerfile: cmd/rancherd/package/Dockerfile
     password:
       from_secret: docker_password
-    repo: rancher/rancherd-upgrade
+    repo: mennaelmasry/rancherd-upgrade
     tag: "${DRONE_TAG}-linux-amd64"
     username:
       from_secret: docker_username
