@@ -37,11 +37,14 @@ docker build --build-arg VERSION=${TAG} --build-arg ARCH=${ARCH} --build-arg IMA
 docker build --build-arg VERSION=${TAG} --build-arg ARCH=${ARCH} --build-arg RANCHER_TAG=${TAG} --build-arg RANCHER_REPO=${REPO} -t ${AGENT_IMAGE} -f Dockerfile.agent .
 if [ "${ARCH}" == amd64 ]; then
     docker build -t ${RUNTIME_IMAGE} -f Dockerfile.runtime .
+    docker build -t ${RACNHERD_IMAGE} --build-arg ARCH --build-arg TAG --tag ${REPO:=rancher}/rancherd-upgrade:${TAG/+/-}  ../cmd/rancherd/package/Dockerfile.
+
 fi
 
 mkdir -p ../dist
 echo ${IMAGE} > ../dist/images
 echo ${AGENT_IMAGE} >> ../dist/images
+echo ${RACNHERD_IMAGE} >> ../dist/images
 echo Built ${IMAGE} #${AGENT_IMAGE}
 echo
 
