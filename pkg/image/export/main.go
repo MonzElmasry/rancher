@@ -89,14 +89,15 @@ func run(systemChartPath, chartPath string, imagesFromArgs []string) error {
 		data.K8sVersionInfo,
 	)
 
-	k3sUpgradeImages := getK3sUpgradeImages(rancherVersion, data.K3S)
+	k3sUpgradeImages := getK3sRke2UpgradeImages(rancherVersion, "k3s", data.K3S)
+	rke2UpgradeImages := getK3sRke2UpgradeImages(rancherVersion, "rke2", data.RKE2)
 
-	targetImages, targetImagesAndSources, err := img.GetImages(systemChartPath, chartPath, k3sUpgradeImages, imagesFromArgs, linuxInfo.RKESystemImages, img.Linux)
+	targetImages, targetImagesAndSources, err := img.GetImages(systemChartPath, chartPath, k3sUpgradeImages, rke2UpgradeImages, imagesFromArgs, linuxInfo.RKESystemImages, img.Linux)
 	if err != nil {
 		return err
 	}
 
-	targetWindowsImages, targetWindowsImagesAndSources, err := img.GetImages(systemChartPath, chartPath, []string{}, []string{getWindowsAgentImage()}, windowsInfo.RKESystemImages, img.Windows)
+	targetWindowsImages, targetWindowsImagesAndSources, err := img.GetImages(systemChartPath, chartPath, []string{}, []string{}, []string{getWindowsAgentImage()}, windowsInfo.RKESystemImages, img.Windows)
 	if err != nil {
 		return err
 	}
@@ -301,10 +302,10 @@ func getWindowsAgentImage() string {
 
 // getK3sUpgradeImages returns k3s-upgrade images for every k3s release that supports
 // current rancher version
-func getK3sUpgradeImages(rancherVersion string, k3sData map[string]interface{}) []string {
-	logrus.Infof("generating k3s image list...")
-	k3sImagesMap := make(map[string]bool)
-	releases, _ := k3sData["releases"].([]interface{})
+func getK3sRke2UpgradeImages(rancherVersion, provider string, providerData map[string]interface{}) []string {
+	logrus.Infof("generating" + provider + " image list...")
+	k3sRke2ImagesMap := make(map[string]bool)
+	releases, _ := providerData["releases"].([]interface{})
 	var compatibleReleases []string
 
 	for _, release := range releases {
@@ -350,12 +351,12 @@ func getK3sUpgradeImages(rancherVersion string, k3sData map[string]interface{}) 
 
 	for _, release := range compatibleReleases {
 		// registries don't allow +, so image names will have these substituted
-		upgradeImage := fmt.Sprintf("rancher/k3s-upgrade:%s", strings.Replace(release, "+", "-", -1))
-		k3sImagesMap[upgradeImage] = true
+		upgradeImage := fmt.Sprintf("rancher/"+provider+"-upgrade:%s", strings.Replace(release, "+", "-", -1))
+		k3sRke2ImagesMap[upgradeImage] = true
 
-		images, err := downloadK3sSupportingImages(release)
+		images, err := downloadK3sSupportingImages(release, provider)
 		if err != nil {
-			logrus.Infof("could not find supporting images for k3s release [%s]: %v", release, err)
+			logrus.Infof("could not find supporting images for "+provider+" release [%s]: %v", release, err)
 			continue
 		}
 
@@ -366,24 +367,29 @@ func getK3sUpgradeImages(rancherVersion string, k3sData map[string]interface{}) 
 
 		for _, imageName := range supportingImages {
 			imageName = strings.TrimPrefix(imageName, "docker.io/")
-			k3sImagesMap[imageName] = true
+			k3sRke2ImagesMap[imageName] = true
 		}
 	}
 
-	var k3sImages []string
-	for imageName := range k3sImagesMap {
-		k3sImages = append(k3sImages, imageName)
+	var k3sRke2Images []string
+	for imageName := range k3sRke2ImagesMap {
+		k3sRke2Images = append(k3sRke2Images, imageName)
 	}
 
-	sort.Strings(k3sImages)
-	logrus.Infof("finished generating k3s image list...")
-	return k3sImages
+	sort.Strings(k3sRke2Images)
+	logrus.Infof("finished generating " + provider + " image list...")
+	return k3sRke2Images
 }
 
 // DownloadK3s supporting images attempt to download k3s-images.txt files that contains a list
 // of its dependencies.
-func downloadK3sSupportingImages(release string) (string, error) {
-	url := fmt.Sprintf("https://github.com/rancher/k3s/releases/download/%s/k3s-images.txt", release)
+func downloadK3sSupportingImages(release, provider string) (string, error) {
+	var url string
+	if provider == "k3s" {
+		url = fmt.Sprintf("https://github.com/rancher/k3s/releases/download/%s/k3s-images.txt", release)
+	} else {
+		url = fmt.Sprintf("https://github.com/rancher/k3s/releases/download/%s/rke2-images.linux-amd64.txt", release)
+	}
 
 	resp, err := http.Get(url)
 	if err != nil {
